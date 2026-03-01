@@ -1,4 +1,4 @@
-name: Build and Deploy to gh-pages
+name: Deploy to gh-pages (OLD STYLE)
 
 on:
   push:
@@ -22,7 +22,7 @@ jobs:
       - run: npm install
       - run: npm run build
 
-      - name: Deploy to gh-pages
+      - name: Publish to gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
