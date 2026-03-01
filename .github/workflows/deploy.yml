@@ -1,4 +1,4 @@
-name: Deploy React to GitHub Pages
+name: Deploy React App to gh-pages
 
 on:
   push:
@@ -22,7 +22,8 @@ jobs:
       - run: npm install
       - run: npm run build
 
-      - uses: peaceiris/actions-gh-pages@v4
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: dist
