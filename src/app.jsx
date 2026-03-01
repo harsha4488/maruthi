@@ -28,12 +28,13 @@ const weights = [
 export default function App() {
   const [current, setCurrent] = useState(0);
   const [fade, setFade] = useState(true);
+
   const [cart, setCart] = useState({});
   const [showCart, setShowCart] = useState(false);
   const [selectedWeights, setSelectedWeights] = useState({});
   const [changeMode, setChangeMode] = useState({});
 
-  /* HERO ROTATION */
+  /* ---------- HERO ROTATION ---------- */
   useEffect(() => {
     const timer = setInterval(() => {
       setFade(false);
@@ -45,7 +46,7 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
-  /* CART */
+  /* ---------- CART LOGIC ---------- */
   const addToCart = (product) => {
     const weight = selectedWeights[product.id];
     if (!weight) return alert("Please select quantity");
@@ -59,21 +60,48 @@ export default function App() {
         qty: (prev[key]?.qty || 0) + 1,
       },
     }));
+
     setChangeMode((p) => ({ ...p, [product.id]: false }));
   };
 
-  const cartItems = Object.values(cart);
-  const totalQty = cartItems.reduce((s, i) => s + i.qty, 0);
+  const updateCartWeight = (key, newWeight) => {
+    setCart((prev) => {
+      const item = prev[key];
+      if (!item) return prev;
+
+      const newKey = `${item.product.id}-${newWeight}`;
+      const updated = { ...prev };
+      delete updated[key];
+
+      updated[newKey] = {
+        ...item,
+        weight: newWeight,
+      };
+
+      return updated;
+    });
+  };
+
+  const removeFromCart = (key) => {
+    setCart((prev) => {
+      const updated = { ...prev };
+      delete updated[key];
+      return updated;
+    });
+  };
+
+  const cartItems = Object.entries(cart);
+  const totalQty = cartItems.reduce((s, [, i]) => s + i.qty, 0);
   const totalPrice = Math.round(
     cartItems.reduce(
-      (s, i) => s + i.qty * i.weight * i.product.pricePerKg,
+      (s, [, i]) => s + i.qty * i.weight * i.product.pricePerKg,
       0
     )
   );
 
   const isAdded = (pid, w) => !!cart[`${pid}-${w}`];
 
-  /* RAZORPAY */
+  /* ---------- RAZORPAY ---------- */
   const loadRazorpay = () =>
     new Promise((resolve) => {
       if (window.Razorpay) return resolve(true);
@@ -86,8 +114,10 @@ export default function App() {
 
   const payWithRazorpay = async () => {
     if (!totalPrice) return alert("Cart is empty");
+
     const loaded = await loadRazorpay();
-    if (!loaded) return alert("Razorpay failed to load");
+    if (!loaded || !window.Razorpay)
+      return alert("Razorpay failed to load");
 
     new window.Razorpay({
       key: "RAZORPAY_TEST_KEY_HERE",
@@ -123,9 +153,7 @@ export default function App() {
         />
         <div style={styles.heroOverlay}>
           <h2 style={styles.heroTitle}>Naturally Premium</h2>
-          <p style={styles.heroSub}>
-            Hand-selected dates & dry fruits
-          </p>
+          <p style={styles.heroSub}>Hand-selected dates & dry fruits</p>
         </div>
       </section>
 
@@ -205,15 +233,40 @@ export default function App() {
       {showCart && (
         <div style={styles.overlay}>
           <div style={styles.cartBox}>
-            <h2>Order Summary</h2>
-            {cartItems.map((i, idx) => (
-              <div key={idx} style={styles.cartItem}>
-                <span>{i.product.name}</span>
+            <h2>Your Cart</h2>
+
+            {cartItems.map(([key, i]) => (
+              <div key={key} style={styles.cartItem}>
+                <div>
+                  <strong>{i.product.name}</strong>
+                  <div style={{ marginTop: 4 }}>
+                    <select
+                      value={i.weight}
+                      style={styles.cartSelect}
+                      onChange={(e) =>
+                        updateCartWeight(key, Number(e.target.value))
+                      }
+                    >
+                      {weights.map((w) => (
+                        <option key={w.value} value={w.value}>
+                          {w.label}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      style={styles.removeBtn}
+                      onClick={() => removeFromCart(key)}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
                 <span>
                   ₹{Math.round(i.qty * i.weight * i.product.pricePerKg)}
                 </span>
               </div>
             ))}
+
             <h3>Total ₹{totalPrice}</h3>
 
             <button style={styles.razorBtn} onClick={payWithRazorpay}>
@@ -245,7 +298,6 @@ const styles = {
     fontFamily: "system-ui, sans-serif",
     background: "#fdfaf6",
     color: "#3a2a1a",
-    WebkitTapHighlightColor: "transparent",
   },
 
   header: {
@@ -260,7 +312,7 @@ const styles = {
     zIndex: 10,
   },
 
-  logo: { margin: 0, fontSize: "18px" },
+  logo: { margin: 0 },
   tagline: { fontSize: "12px", opacity: 0.85 },
 
   cartBtn: {
@@ -287,7 +339,11 @@ const styles = {
     position: "relative",
   },
 
-  heroImage: { width: "100%", height: "100%", objectFit: "cover" },
+  heroImage: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  },
 
   heroOverlay: {
     position: "absolute",
@@ -301,13 +357,8 @@ const styles = {
     textAlign: "center",
   },
 
-  heroTitle: {
-    fontSize: "clamp(26px, 6vw, 44px)",
-  },
-
-  heroSub: {
-    fontSize: "clamp(14px, 4vw, 18px)",
-  },
+  heroTitle: { fontSize: "clamp(26px, 6vw, 44px)" },
+  heroSub: { fontSize: "clamp(14px, 4vw, 18px)" },
 
   section: { padding: "60px 18px", textAlign: "center" },
   sectionAlt: { padding: "60px 18px", background: "#f1e9df" },
@@ -411,7 +462,21 @@ const styles = {
   cartItem: {
     display: "flex",
     justifyContent: "space-between",
-    marginBottom: "10px",
+    marginBottom: "12px",
+  },
+
+  cartSelect: {
+    padding: "6px",
+    borderRadius: "6px",
+    marginRight: "8px",
+  },
+
+  removeBtn: {
+    background: "transparent",
+    color: "#c62828",
+    border: "none",
+    cursor: "pointer",
+    fontSize: "13px",
   },
 
   razorBtn: {
