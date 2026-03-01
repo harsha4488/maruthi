@@ -16,6 +16,7 @@ const products = [
   { id: 3, name: "Cashew Nuts", price: "₹899 / kg", img: "images/cashew.jpg" },
   { id: 4, name: "Pistachios", price: "₹1,199 / kg", img: "images/pista.jpg" },
 ];
+//
 
 export default function App() {
   const [current, setCurrent] = useState(0);
