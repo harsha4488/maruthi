@@ -24,7 +24,6 @@ const weights = [
   { label: "1 kg", value: 1 },
   { label: "2 kg", value: 2 },
 ];
-//
 
 export default function App() {
   const [current, setCurrent] = useState(0);
