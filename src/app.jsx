@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-/* ---------- IMAGES (NO leading / ) ---------- */
+/* ---------- IMAGES ---------- */
 const heroImages = [
   "images/shop.jpg",
   "images/nuts1.jpg",
@@ -11,40 +11,109 @@ const heroImages = [
 ];
 
 const products = [
-  { id: 1, name: "Ajwa Dates", price: "₹899 / kg", img: "images/alwa.jpg" },
-  { id: 2, name: "Almonds (Badam)", price: "₹799 / kg", img: "images/almonds.jpg" },
-  { id: 3, name: "Cashew Nuts", price: "₹899 / kg", img: "images/cashew.jpg" },
-  { id: 4, name: "Pistachios", price: "₹1,199 / kg", img: "images/pista.jpg" },
+  { id: 1, name: "Ajwa Dates", pricePerKg: 899, img: "images/alwa.jpg" },
+  { id: 2, name: "Almonds (Badam)", pricePerKg: 799, img: "images/almonds.jpg" },
+  { id: 3, name: "Cashew Nuts", pricePerKg: 899, img: "images/cashew.jpg" },
+  { id: 4, name: "Pistachios", pricePerKg: 1199, img: "images/pista.jpg" },
+];
+
+const weights = [
+  { label: "250 g", value: 0.25 },
+  { label: "500 g", value: 0.5 },
+  { label: "750 g", value: 0.75 },
+  { label: "1 kg", value: 1 },
+  { label: "2 kg", value: 2 },
 ];
 //
 
 export default function App() {
   const [current, setCurrent] = useState(0);
   const [fade, setFade] = useState(true);
-  const [showOrder, setShowOrder] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
 
+  const [cart, setCart] = useState({});
+  const [showCart, setShowCart] = useState(false);
+  const [selectedWeights, setSelectedWeights] = useState({});
+  const [changeMode, setChangeMode] = useState({});
+
+  /* HERO ROTATION */
   useEffect(() => {
     const timer = setInterval(() => {
       setFade(false);
       setTimeout(() => {
-        setCurrent((prev) => (prev + 1) % heroImages.length);
+        setCurrent((p) => (p + 1) % heroImages.length);
         setFade(true);
       }, 400);
     }, 3500);
     return () => clearInterval(timer);
   }, []);
 
+  /* ADD TO CART */
+  const addToCart = (product) => {
+    const weight = selectedWeights[product.id];
+    if (!weight) return alert("Please select weight");
+
+    const key = `${product.id}-${weight}`;
+    setCart((prev) => ({
+      ...prev,
+      [key]: {
+        product,
+        weight,
+        qty: (prev[key]?.qty || 0) + 1,
+      },
+    }));
+
+    setChangeMode((p) => ({ ...p, [product.id]: false }));
+  };
+
+  const cartItems = Object.values(cart);
+  const totalQty = cartItems.reduce((s, i) => s + i.qty, 0);
+  const totalPrice = Math.round(
+    cartItems.reduce(
+      (s, i) => s + i.qty * i.weight * i.product.pricePerKg,
+      0
+    )
+  );
+
+  const isAdded = (pid, w) => !!cart[`${pid}-${w}`];
+
+  /* ---------- RAZORPAY ---------- */
+  const loadRazorpay = () =>
+    new Promise((resolve) => {
+      if (window.Razorpay) return resolve(true);
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+
+  const payWithRazorpay = async () => {
+    const loaded = await loadRazorpay();
+    if (!loaded) return alert("Razorpay SDK failed to load");
+
+    const options = {
+      key: "RAZORPAY_KEY_HERE", // TEST KEY
+      amount: totalPrice * 100,
+      currency: "INR",
+      name: "Maruthi Dates & Nuts",
+      description: "Dry Fruits Order",
+      handler: function (response) {
+        alert("Payment successful: " + response.razorpay_payment_id);
+      },
+      theme: { color: "#7b3f00" },
+    };
+
+    new window.Razorpay(options).open();
+  };
+
   return (
     <div style={styles.app}>
       {/* HEADER */}
       <header style={styles.header}>
-        <h1 style={styles.logo}>Maruthi Dates & Nuts</h1>
-        <nav style={styles.nav}>
-          <a href="#products" style={styles.navLink}>Products</a>
-          <a href="#gallery" style={styles.navLink}>Gallery</a>
-          <a href="#contact" style={styles.navLink}>Contact</a>
-        </nav>
+        <h1>Maruthi Dates & Nuts</h1>
+        <button style={styles.cartBtn} onClick={() => setShowCart(true)}>
+          🛒 Cart ({totalQty})
+        </button>
       </header>
 
       {/* HERO */}
@@ -61,31 +130,75 @@ export default function App() {
       </section>
 
       {/* PRODUCTS */}
-      <section id="products" style={styles.section}>
-        <h2 style={styles.sectionTitle}>Our Products</h2>
+      <section style={styles.section}>
+        <h2>Our Products</h2>
         <div style={styles.grid}>
-          {products.map((p) => (
-            <div key={p.id} style={styles.card}>
-              <img src={p.img} alt={p.name} style={styles.cardImg} />
-              <h3>{p.name}</h3>
-              <p style={styles.price}>{p.price}</p>
-              <button
-                style={styles.orderBtn}
-                onClick={() => {
-                  setSelectedProduct(p);
-                  setShowOrder(true);
-                }}
-              >
-                Order Now
-              </button>
-            </div>
-          ))}
+          {products.map((p) => {
+            const w = selectedWeights[p.id];
+            const added = w && isAdded(p.id, w);
+            const changing = changeMode[p.id];
+
+            return (
+              <div key={p.id} style={styles.card}>
+                <img src={p.img} alt={p.name} style={styles.cardImg} />
+                <h3>{p.name}</h3>
+                <p style={styles.price}>₹{p.pricePerKg} / kg</p>
+
+                {!added || changing ? (
+                  <>
+                    <select
+                      style={styles.select}
+                      value={w || ""}
+                      onChange={(e) =>
+                        setSelectedWeights({
+                          ...selectedWeights,
+                          [p.id]: Number(e.target.value),
+                        })
+                      }
+                    >
+                      <option value="">Select weight</option>
+                      {weights.map((x) => (
+                        <option key={x.value} value={x.value}>
+                          {x.label}
+                        </option>
+                      ))}
+                    </select>
+                    <button style={styles.addBtn} onClick={() => addToCart(p)}>
+                      Add
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p style={styles.addedText}>
+                      {weights.find((x) => x.value === w)?.label} added
+                    </p>
+                    <div style={styles.btnRow}>
+                      <button
+                        style={styles.goCartBtn}
+                        onClick={() => setShowCart(true)}
+                      >
+                        Go to Cart
+                      </button>
+                      <button
+                        style={styles.changeBtn}
+                        onClick={() =>
+                          setChangeMode({ ...changeMode, [p.id]: true })
+                        }
+                      >
+                        Change
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
       </section>
 
       {/* GALLERY */}
-      <section id="gallery" style={styles.sectionAlt}>
-        <h2 style={styles.sectionTitle}>Gallery</h2>
+      <section style={styles.sectionAlt}>
+        <h2>Gallery</h2>
         <div style={styles.gallery}>
           {heroImages.map((img, i) => (
             <img key={i} src={img} alt="Gallery" style={styles.galleryImg} />
@@ -93,33 +206,37 @@ export default function App() {
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer id="contact" style={styles.footer}>
-        <p>📍 club road, RPC Layout, Vijayanagar, Bengaluru, Karnataka</p>
-        <p>📞 +91 09538347891</p>
+      {/* FOOTER (RESTORED) */}
+      <footer style={styles.footer}>
+        <p>📍 Club Road, RPC Layout, Vijayanagar, Bengaluru</p>
+        <p>📞 +91 95383 47891</p>
         <p>© 2026 Maruthi Dates & Nuts</p>
       </footer>
 
-      {/* ORDER POPUP */}
-      {showOrder && (
-        <div style={styles.orderOverlay}>
-          <div style={styles.orderBox}>
-            <h2>Place Order</h2>
+      {/* CART */}
+      {showCart && (
+        <div style={styles.overlay}>
+          <div style={styles.cartBox}>
+            <h2>Your Cart</h2>
 
-            <p><strong>Product:</strong> {selectedProduct?.name}</p>
-            <p><strong>Price:</strong> {selectedProduct?.price}</p>
+            {cartItems.map((i, idx) => (
+              <div key={idx} style={styles.cartItem}>
+                <span>
+                  {i.product.name} ({i.weight} kg)
+                </span>
+                <span>x {i.qty}</span>
+                <span>
+                  ₹{Math.round(i.qty * i.weight * i.product.pricePerKg)}
+                </span>
+              </div>
+            ))}
 
-            <input style={styles.input} placeholder="Your Name" />
-            <input style={styles.input} placeholder="Mobile Number" />
-            <textarea
-              style={styles.input}
-              rows="3"
-              placeholder="Delivery Address"
-            />
+            <h3>Total: ₹{totalPrice}</h3>
 
-            <h3 style={{ marginTop: "10px" }}>Choose Payment</h3>
+            <button style={styles.razorBtn} onClick={payWithRazorpay}>
+              Pay with Razorpay
+            </button>
 
-            {/* PAYTM */}
             <a
               href="https://paytm.me/YOURPAYTMLINK"
               target="_blank"
@@ -129,21 +246,8 @@ export default function App() {
               Pay with Paytm
             </a>
 
-            {/* CARD / WHATSAPP */}
-            <a
-              href="https://wa.me/91XXXXXXXXXX?text=I%20want%20to%20order%20from%20Maruthi%20Dates%20%26%20Nuts"
-              target="_blank"
-              rel="noreferrer"
-              style={styles.cardBtn}
-            >
-              Credit / Debit Card
-            </a>
-
-            <button
-              style={styles.closeBtn}
-              onClick={() => setShowOrder(false)}
-            >
-              Cancel
+            <button style={styles.closeBtn} onClick={() => setShowCart(false)}>
+              Close
             </button>
           </div>
         </div>
@@ -154,169 +258,109 @@ export default function App() {
 
 /* ---------- STYLES ---------- */
 const styles = {
-  app: { fontFamily: "Arial, sans-serif", color: "#333" },
-
+  app: { fontFamily: "Arial, sans-serif" },
   header: {
-    position: "sticky",
-    top: 0,
-    zIndex: 10,
     background: "#7b3f00",
     color: "white",
     padding: "15px 30px",
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
   },
-
-  logo: { margin: 0 },
-
-  nav: {
-    display: "flex",
-    gap: "20px",
-  },
-
-  navLink: {
-    color: "white",
-    textDecoration: "none",
-    fontWeight: "500",
-  },
-
-  hero: { position: "relative", height: "70vh", overflow: "hidden" },
-
-  heroImage: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-    transition: "opacity 0.4s ease-in-out",
-  },
-
+  cartBtn: { background: "#ff9800", border: "none", padding: "8px 14px" },
+  hero: { height: "70vh", position: "relative" },
+  heroImage: { width: "100%", height: "100%", objectFit: "cover" },
   heroOverlay: {
     position: "absolute",
     inset: 0,
     background: "rgba(0,0,0,0.45)",
+    color: "white",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    color: "white",
-    textAlign: "center",
   },
-
-  section: { padding: "60px 30px", textAlign: "center" },
-
-  sectionAlt: {
-    padding: "60px 30px",
-    background: "#faf6f2",
-    textAlign: "center",
-  },
-
-  sectionTitle: { marginBottom: "30px", fontSize: "28px" },
-
+  section: { padding: "50px 30px", textAlign: "center" },
+  sectionAlt: { padding: "50px 30px", background: "#faf6f2" },
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px,1fr))",
     gap: "25px",
   },
-
   card: {
     background: "white",
-    borderRadius: "12px",
     padding: "15px",
+    borderRadius: "12px",
     boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
   },
-
-  cardImg: {
-    width: "100%",
-    height: "170px",
-    objectFit: "cover",
-    borderRadius: "10px",
-  },
-
+  cardImg: { width: "100%", height: "160px", objectFit: "cover" },
   price: { fontWeight: "bold", color: "#7b3f00" },
-
-  orderBtn: {
+  select: { width: "100%", padding: "10px", marginTop: "8px" },
+  addBtn: {
     marginTop: "10px",
     padding: "10px",
     background: "#ff9800",
     border: "none",
     borderRadius: "6px",
-    cursor: "pointer",
   },
-
+  addedText: { marginTop: "10px", fontWeight: "bold", color: "#2e7d32" },
+  btnRow: { display: "flex", gap: "8px", marginTop: "10px" },
+  goCartBtn: {
+    flex: 1,
+    padding: "10px",
+    background: "#2b7cff",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+  },
+  changeBtn: {
+    flex: 1,
+    padding: "10px",
+    background: "#eee",
+    border: "1px solid #ccc",
+    borderRadius: "6px",
+  },
   gallery: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(160px,1fr))",
     gap: "20px",
   },
-
-  galleryImg: {
-    width: "100%",
-    height: "160px",
-    objectFit: "cover",
-    borderRadius: "10px",
-  },
-
+  galleryImg: { width: "100%", height: "160px", objectFit: "cover" },
   footer: {
     background: "#2b2b2b",
     color: "white",
     padding: "25px",
     textAlign: "center",
   },
-
-  /* ORDER MODAL */
-  orderOverlay: {
+  overlay: {
     position: "fixed",
     inset: 0,
     background: "rgba(0,0,0,0.6)",
     display: "flex",
-    alignItems: "center",
     justifyContent: "center",
-    zIndex: 999,
+    alignItems: "center",
   },
-
-  orderBox: {
-    background: "white",
-    padding: "25px",
-    borderRadius: "12px",
-    width: "90%",
-    maxWidth: "400px",
-    textAlign: "center",
-  },
-
-  input: {
-    width: "100%",
-    padding: "10px",
+  cartBox: { background: "white", padding: "25px", width: "90%", maxWidth: "420px" },
+  cartItem: {
+    display: "flex",
+    justifyContent: "space-between",
     marginBottom: "10px",
-    borderRadius: "6px",
-    border: "1px solid #ccc",
   },
-
+  razorBtn: {
+    marginTop: "10px",
+    padding: "12px",
+    background: "#2b7cff",
+    color: "white",
+    border: "none",
+    width: "100%",
+  },
   paytmBtn: {
     display: "block",
     marginTop: "10px",
     padding: "12px",
     background: "#00b9f1",
     color: "white",
-    borderRadius: "6px",
+    textAlign: "center",
     textDecoration: "none",
   },
-
-  cardBtn: {
-    display: "block",
-    marginTop: "8px",
-    padding: "12px",
-    background: "#444",
-    color: "white",
-    borderRadius: "6px",
-    textDecoration: "none",
-  },
-
-  closeBtn: {
-    marginTop: "15px",
-    padding: "8px 16px",
-    background: "#eee",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer",
-  },
+  closeBtn: { marginTop: "15px", width: "100%" },
 };
