@@ -1,19 +1,19 @@
 import React, { useEffect, useState } from "react";
 
 const heroImages = [
-  "/images/shop.jpg",
-  "/images/nuts1.jpg",
-  "/images/drinks1.jpg",
-  "/images/chocolates1.jpg",
-  "/images/chocolates2.jpg",
-  "/images/chocolates3.jpg",
+  "images/shop.jpg",
+  "images/nuts1.jpg",
+  "images/drinks1.jpg",
+  "images/chocolates1.jpg",
+  "images/chocolates2.jpg",
+  "images/chocolates3.jpg",
 ];
 
 const products = [
-  { id: 1, name: "Ajwa Dates", price: "₹899 / kg", img: "/images/alwa.jpg" },
-  { id: 2, name: "Almonds (Badam)", price: "₹799 / kg", img: "/images/almonds.jpg" },
-  { id: 3, name: "Cashew Nuts", price: "₹899 / kg", img: "/images/cashew.jpg" },
-  { id: 4, name: "Pistachios", price: "₹1,199 / kg", img: "/images/pista.jpg" },
+  { id: 1, name: "Ajwa Dates", price: "₹899 / kg", img: "images/alwa.jpg" },
+  { id: 2, name: "Almonds (Badam)", price: "₹799 / kg", img: "images/almonds.jpg" },
+  { id: 3, name: "Cashew Nuts", price: "₹899 / kg", img: "images/cashew.jpg" },
+  { id: 4, name: "Pistachios", price: "₹1,199 / kg", img: "images/pista.jpg" },
 ];
 
 export default function App() {
