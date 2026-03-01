@@ -60,7 +60,6 @@ export default function App() {
         qty: (prev[key]?.qty || 0) + 1,
       },
     }));
-
     setChangeMode((p) => ({ ...p, [product.id]: false }));
   };
 
@@ -91,7 +90,7 @@ export default function App() {
     if (!loaded) return alert("Razorpay SDK failed to load");
 
     const options = {
-      key: "RAZORPAY_KEY_HERE", // TEST KEY
+      key: "RAZORPAY_KEY_HERE",
       amount: totalPrice * 100,
       currency: "INR",
       name: "Maruthi Dates & Nuts",
@@ -205,7 +204,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* FOOTER (RESTORED) */}
+      {/* FOOTER */}
       <footer style={styles.footer}>
         <p>📍 Club Road, RPC Layout, Vijayanagar, Bengaluru</p>
         <p>📞 +91 95383 47891</p>
@@ -258,16 +257,29 @@ export default function App() {
 /* ---------- STYLES ---------- */
 const styles = {
   app: { fontFamily: "Arial, sans-serif" },
+
   header: {
     background: "#7b3f00",
     color: "white",
     padding: "15px 30px",
     display: "flex",
     justifyContent: "space-between",
+    alignItems: "center",
   },
-  cartBtn: { background: "#ff9800", border: "none", padding: "8px 14px" },
+
+  cartBtn: {
+    background: "white",
+    color: "#7b3f00",
+    border: "2px solid #7b3f00",
+    padding: "8px 16px",
+    borderRadius: "20px",
+    fontWeight: "bold",
+    cursor: "pointer",
+  },
+
   hero: { height: "70vh", position: "relative" },
   heroImage: { width: "100%", height: "100%", objectFit: "cover" },
+
   heroOverlay: {
     position: "absolute",
     inset: 0,
@@ -278,72 +290,93 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
   },
+
   section: { padding: "50px 30px", textAlign: "center" },
   sectionAlt: { padding: "50px 30px", background: "#faf6f2" },
+
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(220px,1fr))",
     gap: "25px",
   },
+
   card: {
     background: "white",
     padding: "15px",
     borderRadius: "12px",
     boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
   },
+
   cardImg: { width: "100%", height: "160px", objectFit: "cover" },
   price: { fontWeight: "bold", color: "#7b3f00" },
+
   select: { width: "100%", padding: "10px", marginTop: "8px" },
+
   addBtn: {
     marginTop: "10px",
     padding: "10px",
-    background: "#ff9800",
-    border: "none",
-    borderRadius: "6px",
-  },
-  addedText: { marginTop: "10px", fontWeight: "bold", color: "#2e7d32" },
-  btnRow: { display: "flex", gap: "8px", marginTop: "10px" },
-  goCartBtn: {
-    flex: 1,
-    padding: "10px",
-    background: "#2b7cff",
+    background: "#7b3f00",
     color: "white",
     border: "none",
     borderRadius: "6px",
+    cursor: "pointer",
   },
+
+  addedText: { marginTop: "10px", fontWeight: "bold", color: "#2e7d32" },
+
+  btnRow: { display: "flex", gap: "8px", marginTop: "10px" },
+
+  goCartBtn: {
+    flex: 1,
+    padding: "10px",
+    background: "#7b3f00",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer",
+  },
+
   changeBtn: {
     flex: 1,
     padding: "10px",
     background: "#eee",
     border: "1px solid #ccc",
     borderRadius: "6px",
+    cursor: "pointer",
   },
+
   gallery: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(160px,1fr))",
     gap: "20px",
   },
+
   galleryImg: { width: "100%", height: "160px", objectFit: "cover" },
+
   footer: {
     background: "#2b2b2b",
     color: "white",
     padding: "25px",
     textAlign: "center",
   },
+
   overlay: {
     position: "fixed",
     inset: 0,
-    background: "rgba(0,0,0,0.6)",
+    background: "rgba(123,63,0,0.45)",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
   },
+
   cartBox: { background: "white", padding: "25px", width: "90%", maxWidth: "420px" },
+
   cartItem: {
     display: "flex",
     justifyContent: "space-between",
     marginBottom: "10px",
   },
+
   razorBtn: {
     marginTop: "10px",
     padding: "12px",
@@ -351,7 +384,9 @@ const styles = {
     color: "white",
     border: "none",
     width: "100%",
+    cursor: "pointer",
   },
+
   paytmBtn: {
     display: "block",
     marginTop: "10px",
@@ -361,5 +396,12 @@ const styles = {
     textAlign: "center",
     textDecoration: "none",
   },
-  closeBtn: { marginTop: "15px", width: "100%" },
+
+  closeBtn: {
+    marginTop: "15px",
+    width: "100%",
+    padding: "10px",
+    border: "none",
+    cursor: "pointer",
+  },
 };
