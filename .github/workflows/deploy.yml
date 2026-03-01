@@ -1,4 +1,4 @@
-name: Build and Deploy to GitHub Pages
+name: Deploy React to GitHub Pages
 
 on:
   push:
@@ -25,4 +25,4 @@ jobs:
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
+          publish_dir: dist
